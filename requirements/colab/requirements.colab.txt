@@ -1,18 +1,18 @@
-# --- API stack (Pydantic v1, matches your code) ---
+# --- API stack (Pydantic v1 to match your code) ---
 fastapi==0.103.2
 uvicorn[standard]==0.23.2
-pydantic==1.10.12
+pydantic==1.10.13
 python-dotenv==1.0.1
 loguru==0.7.3
 rich==13.7.1
-requests==2.31.0
+requests==2.32.4
 
-# --- Scientific core (stable on Py3.12 in Colab) ---
-numpy==1.26.4
-pandas==2.1.4
-scipy==1.11.4
-scikit-learn==1.3.2
-joblib==1.3.2
+# --- Scientific core (compatible with NumPy 2 on Py3.12) ---
+numpy==2.2.2
+pandas==2.2.2
+scipy==1.14.1
+scikit-learn==1.5.2
+joblib==1.4.2
 typing-extensions>=4.7
 
 # --- Bio / sequence ---
