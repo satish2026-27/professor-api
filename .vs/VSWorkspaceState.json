@@ -1,0 +1,15 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\app",
+    "\\app\\api",
+    "\\app\\api\\routes",
+    "\\app\\core",
+    "\\app\\services",
+    "\\notebooks",
+    "\\requirements",
+    "\\requirements\\colab",
+    "\\tests"
+  ],
+  "PreviewInSolutionExplorer": false
+}

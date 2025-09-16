@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.venv/
+venv/
+.env
+.env.*
+.ipynb_checkpoints/
+.vscode/
+.idea/
+.DS_Store
+dist/
+build/
+node_modules/
