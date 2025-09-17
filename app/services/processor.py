@@ -1,3 +1,9 @@
+def to_py(obj):
+    import numpy as np
+    if isinstance(obj, np.generic):
+        return obj.item()
+    return obj
+
 # -*- coding: utf-8 -*-
 """IDPDesigner (1).ipynb
 
@@ -649,7 +655,13 @@ def run_professor_code(start_seq: str, target: float = 0.3):
 
     sa.run_until_target()
     return {
+    "distance": to_py(best_distance),
+    "nu": to_py(nu),
+    "best_sequence": best_sequence
+    }
+
+   ''' return {
         "best_sequence": sa.get_best_solution(),
         "distance": sa.distance_from_target(),
         "nu": sa.get_nu(sa.get_sequence())
-    }
+    }'''
