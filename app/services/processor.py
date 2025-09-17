@@ -22,12 +22,12 @@ pd.options.mode.chained_assignment = None
 import numpy as np
 import itertools
 from joblib import dump, load
-!pip install wget
+'''!pip install wget
 !pip install localcider
 !pip install scikit-learn
 
 !pip install idptools-parrot --quiet;
-!pip install git+https://git@github.com/idptools/sparrow.git --quiet;
+!pip install git+https://git@github.com/idptools/sparrow.git --quiet;'''
 import wget
 from localcider.sequenceParameters import SequenceParameters
 import matplotlib.pyplot as plt
@@ -39,16 +39,16 @@ import warnings
 warnings.filterwarnings('ignore')
 import sklearn
 
-! pip install fair-esm
+#! pip install fair-esm
 
 # Commented out IPython magic to ensure Python compatibility.
 
 
 # Install from GitHub
-!git clone https://github.com/doszilab/AIUPred
+'''!git clone https://github.com/doszilab/AIUPred
 # %cd AIUPred
 !pip install torch>=2.2.0 torchvision
-!pip install -r requirements.txt --no-deps || pip install numpy scipy matplotlib seaborn pandas
+!pip install -r requirements.txt --no-deps || pip install numpy scipy matplotlib seaborn pandas'''
 import sys
 sys.path.append('.')
 import aiupred_lib
