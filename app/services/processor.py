@@ -653,9 +653,18 @@ def run_professor_code(start_seq: str, target: float = 0.3):
         pH=7.0
     )
 
+    # run optimization
     sa.run_until_target()
+
+    # ✅ fetch results from the object, not undefined vars
+    best_sequence, best_fitness = sa.get_best_solution()
+    best_distance = sa.distance_from_target()
+    nu = sa.get_nu(best_sequence)
+
     return {
-        "distance": to_py(best_distance),
-        "nu": to_py(nu),
-        "best_sequence": best_sequence
+        "distance": float(best_distance),    # convert numpy → Python
+        "nu": float(nu),
+        "best_sequence": best_sequence,
+        "fitness": float(best_fitness)
     }
+
