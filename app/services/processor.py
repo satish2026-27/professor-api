@@ -655,9 +655,9 @@ def run_professor_code(start_seq: str, target: float = 0.3):
 
     sa.run_until_target()
     return {
-    "distance": to_py(best_distance),
-    "nu": to_py(nu),
-    "best_sequence": best_sequence
+        "distance": to_py(best_distance),
+        "nu": to_py(nu),
+        "best_sequence": best_sequence
     }
 
    ''' return {
