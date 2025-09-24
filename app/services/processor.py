@@ -625,14 +625,14 @@ print(sa.get_nu(sa.get_sequence()))
 print(f"Best distance achieved: {sa.distance_from_target():.6f}")
 print(f"Best sequence: {sa.get_best_solution()}")
 
-def run_professor_code(start_seq: str, target: float = 0.3):
+def run_professor_code(start_seq: str, target: float = 0.3, tolerance: float = 0.01, scalingMethod: str = "exp", bufferSize: int = 2, penalty: float = 0.01):
     """
     Run professor's IDP Designer pipeline.
     Returns best sequence and fitness score.
     """
 
-    # 👇 reuse professor’s variables and functions here
-    masked_seq, _ = mask_sequence_with_boundaries(start_seq, boundaries, buffer_size=2)
+    # reuse professor’s variables and functions here
+    masked_seq, _ = mask_sequence_with_boundaries(start_seq, boundaries, buffer_size=bufferSize)
     embedding_model, regression_model, device = aiupred_lib.init_models('disorder')
     original_disorder = aiupred_lib.predict_disorder(start_seq, embedding_model, regression_model, device)
 
@@ -640,16 +640,16 @@ def run_professor_code(start_seq: str, target: float = 0.3):
         start_seq=start_seq,
         masked_seq=masked_seq,
         boundaries=boundaries,
-        scaling_exp=True,
-        scaling_rg=False,
+        scaling_exp=(scalingMethod == "exp"),
+        scaling_rg=(scalingMethod == "rg"),
         mutation_mode="single_point",
         target_compaction=target,
         original_disorder=original_disorder,
         compaction_weight=0.7,
         disorder_weight=0.3,
         c=0.003,
-        gamma=0.01,
-        tolerance=0.01,
+        gamma=penalty,
+        tolerance=tolerance,
         pH=7.0
     )
 
