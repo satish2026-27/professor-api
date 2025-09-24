@@ -1,7 +1,19 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field
 from app.services.processor import run_professor_code
 
 app = FastAPI()
+
+#---CORS ---
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 @app.get("/run")
 def run_idp(start_seq: str, target: float = 0.3):
@@ -10,6 +22,18 @@ def run_idp(start_seq: str, target: float = 0.3):
     Example: /run?start_seq=VLTKTKYT...&target=0.3
     """
     return run_professor_code(start_seq, target)
+
+#new:post endpoint
+class RunPayload(BaseModel):
+    start_seq: str = Field(..., min_length=1)
+    target: float = 0.3
+
+@app.post("/run")
+def run_idp_post(payload: RunPayload):
+    try:
+        return run_professor_code(payload.start_seq, payload.target)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 
