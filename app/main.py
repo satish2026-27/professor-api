@@ -25,15 +25,26 @@ def run_idp(start_seq: str, target: float = 0.3):
 
 #new:post endpoint
 class RunPayload(BaseModel):
-    start_seq: str = Field(..., min_length=1)
-    target: float = 0.3
+    start_seq: str
+    target: float
+    tolerance: float = 0.01
+    scalingMethod: str = "exp"
+    bufferSize: int = 2
+    penalty: float = 0.01
+
 
 @app.post("/run")
-def run_idp_post(payload: RunPayload):
-    try:
-        return run_professor_code(payload.start_seq, payload.target)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+async def run(payload: RunPayload):
+    result = run_professor_code(
+        start_seq=payload.start_seq,
+        target=payload.target,
+        tolerance=payload.tolerance,
+        scalingMethod=payload.scalingMethod,
+        bufferSize=payload.bufferSize,
+        penalty=payload.penalty,
+    )
+    return result
+
 
 
 
