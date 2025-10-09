@@ -869,3 +869,139 @@ print(f"Motif preservation: {'PASS' if summary['motif_preservation'] else 'FAIL'
 
 df = sa.get_history_df()
 print(df.iloc[-1])
+
+
+# ================== FASTAPI ADAPTER (place at bottom of module) ==================
+
+# Keep responses JSON-safe
+def _to_py(x):
+    import numpy as np
+    if isinstance(x, (np.generic,)):
+        return x.item()
+    return x
+
+def _to_py_recursive(obj):
+    """Convert nested numpy/tensor types into plain Python."""
+    import numpy as np
+    if isinstance(obj, dict):
+        return {k: _to_py_recursive(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [ _to_py_recursive(v) for v in obj ]
+    if isinstance(obj, np.generic):
+        return obj.item()
+    return obj
+
+# Optional: cache disorder models to avoid reloading per request
+_EMB = _REG = _DEV = None
+def _get_models():
+    global _EMB, _REG, _DEV
+    if _EMB is None or _REG is None or _DEV is None:
+        _EMB, _REG, _DEV = aiupred_lib.init_models('disorder')
+    return _EMB, _REG, _DEV
+
+# Defaults you had in the notebook
+_DEFAULT_BOUNDARIES = {
+    "MOD_GSK3_1_1": (54, 61),
+    "MOD_GSK3_1":   (83, 90),
+    "MOD_GSK3_1_2": (132, 139),
+}
+
+def run_professor_code(
+    start_seq: str,
+    # --- choose which compaction metrics to optimize (set a target to include it) ---
+    target_scaling_exp: float | None = 0.3,
+    target_rg: float | None = None,
+    target_asphericity: float | None = 0.3,
+
+    # --- algorithm knobs (use your new defaults) ---
+    buffer_size: int = 2,
+    disorder_weight: float = 0.5,
+    compaction_weight: float = 0.5,
+    max_edit_percentage: float = 0.15,
+    tolerance: float = 0.01,
+    c: float = 0.003,
+    penalty: float = 0.01,          # gamma in your code
+    pH: float = 7.0,
+
+    # allow client to pass custom motif boundaries
+    boundaries: dict | None = None,
+) -> dict:
+    """
+    Thin wrapper for FastAPI. Builds compaction dict, runs SA, and returns JSON-safe results.
+    """
+
+    # 1) Build compaction target dict from the parameters provided
+    compaction_dict = {}
+    if target_scaling_exp is not None:
+        compaction_dict["scaling_exp"] = float(target_scaling_exp)
+    if target_rg is not None:
+        compaction_dict["scaling_rg"] = float(target_rg)
+    if target_asphericity is not None:
+        compaction_dict["asphericity"] = float(target_asphericity)
+
+    if not compaction_dict:
+        return {"ok": False, "error": "At least one of target_scaling_exp, target_rg, target_asphericity must be provided."}
+
+    # 2) Prep inputs
+    boundaries = boundaries or _DEFAULT_BOUNDARIES
+    masked_seq, _ = mask_sequence_with_boundaries(start_seq, boundaries, buffer_size=buffer_size)
+
+    emb, reg, dev = _get_models()
+    original_disorder = aiupred_lib.predict_disorder(start_seq, emb, reg, dev)
+
+    # 3) Run optimizer (your new SimulatedAnnealing)
+    sa = SimulatedAnnealing(
+        start_seq=start_seq,
+        masked_seq=masked_seq,
+        boundaries=boundaries,
+        target_compaction=compaction_dict,
+        mutation_mode="single_point",     # you weight multiple mutation types internally
+        original_disorder=original_disorder,
+        compaction_weight=compaction_weight,
+        disorder_weight=disorder_weight,
+        max_edit_percentage=max_edit_percentage,
+        c=c,
+        gamma=penalty,
+        tolerance=tolerance,
+        pH=pH,
+    )
+
+    sa.run_until_target()   # respects your defaults / stops on tolerance or max steps
+
+    # 4) Package results
+    summary = sa.get_optimization_summary()         # dict with compaction/charge/edit stats
+    history_df = sa.get_history_df()                # pandas DF (only every 100th step)
+    history_tail = []
+    if history_df is not None and len(history_df) > 0:
+        # limit to last 50 rows so payload stays small
+        history_tail = history_df.tail(50).to_dict(orient="records")
+
+    # ensure JSON-safe types
+    summary = _to_py_recursive(summary)
+    history_tail = _to_py_recursive(history_tail)
+
+    return {
+        "ok": True,
+        "input": {
+            "start_seq": start_seq,
+            "targets": compaction_dict,
+            "buffer_size": int(buffer_size),
+            "disorder_weight": float(disorder_weight),
+            "compaction_weight": float(compaction_weight),
+            "max_edit_percentage": float(max_edit_percentage),
+            "tolerance": float(tolerance),
+            "c": float(c),
+            "penalty": float(penalty),
+            "pH": float(pH),
+            "boundaries": boundaries,
+        },
+        "result": {
+            "summary": summary,         # includes: converged, steps, best_sequence, best_fitness,
+                                        # current_compaction, target_compaction, charge_distribution,
+                                        # edit_distance, max_edits, motif_preservation, etc.
+            "history_tail": history_tail
+        },
+    }
+
+__all__ = ["run_professor_code"]
+# ================== END FASTAPI ADAPTER =======================================
