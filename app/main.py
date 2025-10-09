@@ -1,6 +1,45 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
+from typing import Optional, Dict
+from app.services.idpdesigner import run_professor_code   # adjust path if you moved it
+
+app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # tighten later
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+class RunRequest(BaseModel):
+    start_seq: str
+    target_scaling_exp: Optional[float] = Field(default=0.3)
+    target_rg: Optional[float] = None
+    target_asphericity: Optional[float] = Field(default=0.3)
+    buffer_size: int = 2
+    disorder_weight: float = 0.5
+    compaction_weight: float = 0.5
+    max_edit_percentage: float = 0.15
+    tolerance: float = 0.01
+    c: float = 0.003
+    penalty: float = 0.01
+    pH: float = 7.0
+    boundaries: Optional[Dict[str, tuple]] = None
+
+@app.post("/run")
+def run_idp(req: RunRequest):
+    out = run_professor_code(**req.model_dump())
+    if not out.get("ok"):
+        raise HTTPException(status_code=400, detail=out.get("error", "Unknown error"))
+    return out
+
+
+'''from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field
 from app.services.processor import run_professor_code
 
 app = FastAPI()
@@ -43,7 +82,7 @@ async def run(payload: RunPayload):
         bufferSize=payload.bufferSize,
         penalty=payload.penalty,
     )
-    return result
+'''#    return result
 
 
 
